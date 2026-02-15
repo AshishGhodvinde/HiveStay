@@ -23,9 +23,7 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 public class InventoryServiceImpl implements InventoryService{
     private final ModelMapper modelMapper;
-
     private final InventoryRepository inventoryRepository;
-
 
     @Override
     public void initializeRoomForAYear(Room room) {
@@ -49,11 +47,13 @@ public class InventoryServiceImpl implements InventoryService{
 
     @Override
     public void deleteAllInventories(Room room) {
+        log.info("Deleting the inventories of room with id: {}", room.getId());
         inventoryRepository.deleteByRoom(room);
     }
 
     @Override
     public Page<HotelDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
+        log.info("Searching hotels for {} city, from {} to {}", hotelSearchRequest.getCity(), hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate());
         Pageable pageable = PageRequest.of(hotelSearchRequest.getPage(), hotelSearchRequest.getSize());
 
         Long dateCount =

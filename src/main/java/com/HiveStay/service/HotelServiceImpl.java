@@ -1,6 +1,8 @@
 package com.HiveStay.service;
 
 import com.HiveStay.dto.HotelDto;
+import com.HiveStay.dto.HotelInfoDto;
+import com.HiveStay.dto.RoomDto;
 import com.HiveStay.entity.Hotel;
 import com.HiveStay.entity.Room;
 import com.HiveStay.exception.ResourceNotFoundException;
@@ -11,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -79,5 +84,21 @@ public class HotelServiceImpl implements HotelService{
         for(Room room : hotel.getRooms()){
             inventoryService.initializeRoomForAYear(room);
         }
+        log.error("🔥 Activating hotel {}, rooms count = {}",
+                hotelId, hotel.getRooms().size());
+
+    }
+
+    @Override
+    public HotelInfoDto getHotelInfoById(Long hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+hotelId));
+
+        List<RoomDto> rooms = hotel.getRooms()
+                .stream()
+                .map((element) -> modelMapper.map(element, RoomDto.class))
+                .toList();
+
+        return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
     }
 }
