@@ -5,13 +5,16 @@ import com.HiveStay.dto.HotelInfoDto;
 import com.HiveStay.dto.RoomDto;
 import com.HiveStay.entity.Hotel;
 import com.HiveStay.entity.Room;
+import com.HiveStay.entity.User;
 import com.HiveStay.exception.ResourceNotFoundException;
+import com.HiveStay.exception.UnAuthorisedException;
 import com.HiveStay.repository.HotelRepository;
 import com.HiveStay.repository.RoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,11 +30,16 @@ public class HotelServiceImpl implements HotelService{
     private final ModelMapper modelMapper;
     private final RoomRepository roomRepository;
 
+    // these all are admin commands
+
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
         log.info("Creating a new hotel with name: {}", hotelDto.getName());
         Hotel hotel = modelMapper.map(hotelDto, Hotel.class);
         hotel.setActive(false);
+
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         hotel = hotelRepository.save(hotel);
         log.info("Created a new hotel with ID: {}", hotelDto.getId());
         return modelMapper.map(hotel, HotelDto.class);
@@ -40,8 +48,13 @@ public class HotelServiceImpl implements HotelService{
     @Override
     public HotelDto getHotelById(Long id) {
         log.info("Getting the hotel with ID: {}", id);
-        Hotel hotel = hotelRepository.findById(id)
+        Hotel hotel = hotelRepository
+                .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.equals(hotel.getOwner())){
+            throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+        }
         return modelMapper.map(hotel, HotelDto.class);
     }
 
@@ -50,6 +63,10 @@ public class HotelServiceImpl implements HotelService{
         log.info("Updating the hotel with ID: {}", id);
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.equals(hotel.getOwner())){
+            throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+        }
         modelMapper.map(hotelDto, hotel);
         hotel.setId(id);
         hotelRepository.save(hotel);
@@ -63,6 +80,11 @@ public class HotelServiceImpl implements HotelService{
         Hotel hotel = hotelRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
+
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.equals(hotel.getOwner())){
+            throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+        }
 
         for(Room room : hotel.getRooms()){
             inventoryService.deleteAllInventories(room);
@@ -78,17 +100,23 @@ public class HotelServiceImpl implements HotelService{
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+hotelId));
 
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.equals(hotel.getOwner())){
+            throw new UnAuthorisedException("This user does not own this hotel with id: "+hotelId);
+        }
+
         hotel.setActive(true);
 
         //assuming only do it is one time
         for(Room room : hotel.getRooms()){
             inventoryService.initializeRoomForAYear(room);
         }
-        log.error("🔥 Activating hotel {}, rooms count = {}",
+        log.error("Activating hotel {}, rooms count = {}",
                 hotelId, hotel.getRooms().size());
 
     }
 
+    // public method
     @Override
     public HotelInfoDto getHotelInfoById(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)

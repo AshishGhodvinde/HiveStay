@@ -1,0 +1,60 @@
+package com.HiveStay.controller;
+
+import com.HiveStay.dto.LoginDto;
+import com.HiveStay.dto.LoginResponseDto;
+import com.HiveStay.dto.SignUpRequestDto;
+import com.HiveStay.dto.UserDto;
+import com.HiveStay.security.AuthService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.antlr.v4.runtime.Token;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
+
+//these auth routes are public, if not no one can even visit the signup page
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class AuthController {
+    private final AuthService authService;
+
+    @PostMapping("/signup")
+    public ResponseEntity<UserDto> signup(@RequestBody SignUpRequestDto signUpRequestDto){
+        return new ResponseEntity<>(authService.signUp(signUpRequestDto), HttpStatus.CREATED);
+    }
+
+    //LoginResponseDto is basically the accessToken
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginDto loginDto, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse){
+        String[] tokens = authService.login(loginDto);
+
+        //refresh token in cookies
+        Cookie cookie = new Cookie("refreshToken", tokens[1]);
+        cookie.setHttpOnly(true);
+
+        httpServletResponse.addCookie(cookie);
+        return ResponseEntity.ok(new LoginResponseDto(tokens[0]));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDto> refresh(HttpServletRequest request) {
+        //fetching the cookie for refresh token
+        String refreshToken = Arrays.stream(request.getCookies()).
+                filter(cookie -> "refreshToken".equals(cookie.getName()))
+                .findFirst()
+                .map(Cookie::getValue)
+                .orElseThrow(() -> new AuthenticationServiceException("Refresh token not found inside the Cookies"));
+
+        String accessToken = authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(new LoginResponseDto(accessToken));
+    }
+}
