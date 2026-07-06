@@ -4,7 +4,6 @@ import com.HiveStay.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-//import lombok.Value;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +13,7 @@ import java.util.Date;
 
 @Service
 public class JWTService {
+
     @Value("${jwt.secretKey}")
     private String jwtSecretKey;
 
@@ -21,8 +21,6 @@ public class JWTService {
         return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    //takes user object and create token
-    //10min expiration date
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .subject(user.getId().toString())
@@ -34,7 +32,6 @@ public class JWTService {
                 .compact();
     }
 
-    //same as generateAccessToken but email and roles are not required here
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .subject(user.getId().toString())
@@ -44,7 +41,6 @@ public class JWTService {
                 .compact();
     }
 
-    //getting payload -> then userId from it
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSecretKey())
@@ -53,4 +49,5 @@ public class JWTService {
                 .getPayload();
         return Long.valueOf(claims.getSubject());
     }
+
 }

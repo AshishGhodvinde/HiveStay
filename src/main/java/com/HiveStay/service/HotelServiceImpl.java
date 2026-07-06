@@ -1,24 +1,26 @@
 package com.HiveStay.service;
 
-import com.HiveStay.dto.HotelDto;
-import com.HiveStay.dto.HotelInfoDto;
-import com.HiveStay.dto.RoomDto;
+import com.HiveStay.dto.*;
 import com.HiveStay.entity.Hotel;
 import com.HiveStay.entity.Room;
 import com.HiveStay.entity.User;
 import com.HiveStay.exception.ResourceNotFoundException;
 import com.HiveStay.exception.UnAuthorisedException;
 import com.HiveStay.repository.HotelRepository;
+import com.HiveStay.repository.InventoryRepository;
 import com.HiveStay.repository.RoomRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.HiveStay.util.AppUtils.getCurrentUser;
 
 @Service
 @Slf4j
@@ -26,11 +28,10 @@ import java.util.stream.Collectors;
 public class HotelServiceImpl implements HotelService{
 
     private final HotelRepository hotelRepository;
-    private final InventoryService inventoryService;
     private final ModelMapper modelMapper;
+    private final InventoryService inventoryService;
     private final RoomRepository roomRepository;
-
-    // these all are admin commands
+    private final InventoryRepository inventoryRepository;
 
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
@@ -39,6 +40,7 @@ public class HotelServiceImpl implements HotelService{
         hotel.setActive(false);
 
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        hotel.setOwner(user);
 
         hotel = hotelRepository.save(hotel);
         log.info("Created a new hotel with ID: {}", hotelDto.getId());
@@ -52,41 +54,46 @@ public class HotelServiceImpl implements HotelService{
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!user.equals(hotel.getOwner())){
+
+        if(!user.equals(hotel.getOwner())) {
             throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
         }
+
         return modelMapper.map(hotel, HotelDto.class);
     }
 
     @Override
     public HotelDto updateHotelById(Long id, HotelDto hotelDto) {
         log.info("Updating the hotel with ID: {}", id);
-        Hotel hotel = hotelRepository.findById(id)
+        Hotel hotel = hotelRepository
+                .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
+
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())) {
             throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
         }
+
         modelMapper.map(hotelDto, hotel);
         hotel.setId(id);
-        hotelRepository.save(hotel);
+        hotel = hotelRepository.save(hotel);
         return modelMapper.map(hotel, HotelDto.class);
     }
 
     @Override
-    @Transactional //used to databases here, so wither it will do both operations else non
-    // if delete hotel then inventory should also be deleted simultaneously
+    @Transactional
     public void deleteHotelById(Long id) {
         Hotel hotel = hotelRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+id));
 
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())) {
             throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
         }
 
-        for(Room room : hotel.getRooms()){
+
+        for(Room room: hotel.getRooms()) {
             inventoryService.deleteAllInventories(room);
             roomRepository.deleteById(room.getId());
         }
@@ -97,36 +104,60 @@ public class HotelServiceImpl implements HotelService{
     @Transactional
     public void activateHotel(Long hotelId) {
         log.info("Activating the hotel with ID: {}", hotelId);
-        Hotel hotel = hotelRepository.findById(hotelId)
+        Hotel hotel = hotelRepository
+                .findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+hotelId));
 
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!user.equals(hotel.getOwner())){
+
+        if(!user.equals(hotel.getOwner())) {
             throw new UnAuthorisedException("This user does not own this hotel with id: "+hotelId);
         }
 
         hotel.setActive(true);
 
-        //assuming only do it is one time
-        for(Room room : hotel.getRooms()){
+        // assuming only do it once
+        for(Room room: hotel.getRooms()) {
             inventoryService.initializeRoomForAYear(room);
         }
-        log.error("Activating hotel {}, rooms count = {}",
-                hotelId, hotel.getRooms().size());
-
     }
 
-    // public method
+//    public method
     @Override
-    public HotelInfoDto getHotelInfoById(Long hotelId) {
-        Hotel hotel = hotelRepository.findById(hotelId)
+    public HotelInfoDto getHotelInfoById(Long hotelId, HotelInfoRequestDto hotelInfoRequestDto) {
+        Hotel hotel = hotelRepository
+                .findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+hotelId));
 
-        List<RoomDto> rooms = hotel.getRooms()
-                .stream()
-                .map((element) -> modelMapper.map(element, RoomDto.class))
-                .toList();
+        long daysCount = ChronoUnit.DAYS.between(hotelInfoRequestDto.getStartDate(), hotelInfoRequestDto.getEndDate())+1;
+
+        List<RoomPriceDto> roomPriceDtoList = inventoryRepository.findRoomAveragePrice(hotelId,
+                hotelInfoRequestDto.getStartDate(), hotelInfoRequestDto.getEndDate(),
+                hotelInfoRequestDto.getRoomsCount(), daysCount);
+
+        List<RoomPriceResponseDto> rooms = roomPriceDtoList.stream()
+                .map(roomPriceDto -> {
+                    RoomPriceResponseDto roomPriceResponseDto = modelMapper.map(roomPriceDto.getRoom(),
+                            RoomPriceResponseDto.class);
+                    roomPriceResponseDto.setPrice(roomPriceDto.getPrice());
+                    return roomPriceResponseDto;
+                })
+                .collect(Collectors.toList());
 
         return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
     }
+
+    @Override
+    public List<HotelDto> getAllHotels() {
+        User user = getCurrentUser();
+        log.info("Getting all hotels for the admin user with ID: {}", user.getId());
+        List<Hotel> hotels = hotelRepository.findByOwner(user);
+
+        return hotels
+                .stream()
+                .map((element) -> modelMapper.map(element, HotelDto.class))
+                .collect(Collectors.toList());
+    }
+
+
 }

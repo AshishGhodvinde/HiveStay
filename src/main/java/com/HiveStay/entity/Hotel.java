@@ -25,7 +25,6 @@ public class Hotel {
 
     private String city;
 
-    //url's are stored of images stored in db
     @Column(columnDefinition = "TEXT[]")
     private String[] photos;
 
@@ -39,15 +38,16 @@ public class Hotel {
     private LocalDateTime updatedAt;
 
     @Embedded
-    private HotelContactInfo contactInfo;       //contact_info_address, contact_info_phone_number
+    private HotelContactInfo contactInfo;
 
     @Column(nullable = false)
     private Boolean active;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     private User owner;
 
     @OneToMany(mappedBy = "hotel")
     @JsonIgnore
     private List<Room> rooms;
+
 }

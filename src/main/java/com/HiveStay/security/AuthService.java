@@ -27,9 +27,11 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
 
-    public UserDto signUp(SignUpRequestDto signUpRequestDto){
+    public UserDto signUp(SignUpRequestDto signUpRequestDto) {
+
         User user = userRepository.findByEmail(signUpRequestDto.getEmail()).orElse(null);
-        if(user != null){
+
+        if (user != null) {
             throw new RuntimeException("User is already present with same email id");
         }
 
@@ -41,25 +43,25 @@ public class AuthService {
         return modelMapper.map(newUser, UserDto.class);
     }
 
-    public String[] login(LoginDto loginDto){
+    public String[] login(LoginDto loginDto) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginDto.getEmail(), loginDto.getPassword()
         ));
 
-        //if user is authenticated, it is get stored in principal and authenticated=true
         User user = (User) authentication.getPrincipal();
 
-        String arr[] = new String[2];
+        String[] arr = new String[2];
         arr[0] = jwtService.generateAccessToken(user);
         arr[1] = jwtService.generateRefreshToken(user);
 
         return arr;
     }
 
-    public String refreshToken(String refreshToken){
+    public String refreshToken(String refreshToken) {
         Long id = jwtService.getUserIdFromToken(refreshToken);
 
-        User user = userRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found with id: "+id));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: "+id));
         return jwtService.generateAccessToken(user);
     }
+
 }

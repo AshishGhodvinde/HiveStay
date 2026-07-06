@@ -4,6 +4,11 @@ import com.HiveStay.entity.enums.Gender;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -15,7 +20,6 @@ public class Guest {
     private Long id;
 
     @ManyToOne
-    //JoinColumn here because -> Guest is owning the new column
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -25,9 +29,12 @@ public class Guest {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    private Integer age;
+    private LocalDate dateOfBirth;
 
-//    @ManyToMany(mappedBy = "guests")
-    // X -> @JoinTable -> will create a new table as it is already done in Booking class
-//    private Set<Booking> bookings;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
 }

@@ -1,14 +1,15 @@
 package com.HiveStay.advice;
 
+import com.HiveStay.advice.ApiError;
+import com.HiveStay.advice.ApiResponse;
 import com.HiveStay.exception.ResourceNotFoundException;
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import javax.naming.AuthenticationException;
-import java.nio.file.AccessDeniedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,7 +23,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponseEntity(apiError);
     }
 
-    //handling unauthenticated user, if he tries to visit routes which are only allowed for authenticated user
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<?>> handleAuthenticationException(AuthenticationException ex) {
         ApiError apiError = ApiError.builder()
@@ -32,7 +32,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponseEntity(apiError);
     }
 
-    //JWT token expired or malformed jwt token
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse<?>> handleJwtException(JwtException ex) {
         ApiError apiError = ApiError.builder()
@@ -42,7 +41,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponseEntity(apiError);
     }
 
-    //to forbid logedIn user from using admin only routes
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<?>> handleAccessDeniedException(AccessDeniedException ex) {
         ApiError apiError = ApiError.builder()
@@ -52,7 +50,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponseEntity(apiError);
     }
 
-    @ExceptionHandler(Exception.class)
+//    @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleInternalServerError(Exception exception) {
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

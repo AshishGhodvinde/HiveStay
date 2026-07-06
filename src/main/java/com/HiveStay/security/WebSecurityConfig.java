@@ -1,6 +1,5 @@
 package com.HiveStay.security;
 
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,7 +35,7 @@ public class WebSecurityConfig {
     private HandlerExceptionResolver handlerExceptionResolver;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         httpSecurity
                 .csrf(csrfConfig -> csrfConfig.disable())
@@ -44,8 +43,9 @@ public class WebSecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("HOTEL_MANAGER")
-                        .requestMatchers("/bookings/**").authenticated()  //only authenticated users can visit bookings section
-                        .anyRequest().permitAll()   //auth routes are public
+                        .requestMatchers("/bookings/**").authenticated()
+                        .requestMatchers("/users/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(exHandlingConfig -> exHandlingConfig.accessDeniedHandler(accessDeniedHandler()));
 
@@ -53,20 +53,20 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public AccessDeniedHandler accessDeniedHandler(){
+    public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
             handlerExceptionResolver.resolveException(request, response, null, accessDeniedException);
         };
-
     }
+
 }

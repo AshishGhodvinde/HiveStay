@@ -12,10 +12,10 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(     //made a unique column of these 3 fields
+@Table(
         uniqueConstraints = @UniqueConstraint(
-                name = "unique_hotel_room_date",
-                columnNames = {"hotel_id", "room_id", "date"}
+            name = "unique_hotel_room_date",
+            columnNames = {"hotel_id", "room_id", "date"}
 ))
 @Builder
 @NoArgsConstructor
@@ -30,18 +30,17 @@ public class Inventory {
     @JoinColumn(name = "hotel_id", nullable = false)
     private Hotel hotel;
 
-    //1 room will have multiple inventories, as it will store date for multiple days
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name= "room_id", nullable = false)
     private Room room;
 
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, columnDefinition = "INTEGER  DEFAULT 0")
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     private Integer bookedCount;
 
-    @Column(nullable = false, columnDefinition = "INTEGER  DEFAULT 0")
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     private Integer reservedCount;
 
     @Column(nullable = false)
@@ -64,5 +63,4 @@ public class Inventory {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
 }

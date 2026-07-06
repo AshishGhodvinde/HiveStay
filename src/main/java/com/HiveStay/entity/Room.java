@@ -14,18 +14,19 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Room {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)    //many rooms in one hotel
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false)
     private Hotel hotel;
 
     @Column(nullable = false)
-    private String type;        //deluxe, basic, etc
+    private String type;
 
-    @Column(nullable = false, precision = 10, scale = 2)    //after decimal only 2 values and upto billion
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
     @Column(columnDefinition = "TEXT[]")
@@ -46,4 +47,5 @@ public class Room {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
 }

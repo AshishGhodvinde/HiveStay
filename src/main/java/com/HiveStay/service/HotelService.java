@@ -2,15 +2,22 @@ package com.HiveStay.service;
 
 import com.HiveStay.dto.HotelDto;
 import com.HiveStay.dto.HotelInfoDto;
-import com.HiveStay.entity.Hotel;
-import org.jspecify.annotations.Nullable;
+import com.HiveStay.dto.HotelInfoRequestDto;
+
+import java.util.List;
 
 public interface HotelService {
     HotelDto createNewHotel(HotelDto hotelDto);
+
     HotelDto getHotelById(Long id);
+
     HotelDto updateHotelById(Long id, HotelDto hotelDto);
+
     void deleteHotelById(Long id);
+
     void activateHotel(Long hotelId);
 
-    HotelInfoDto getHotelInfoById(Long hotelId);
+    HotelInfoDto getHotelInfoById(Long hotelId, HotelInfoRequestDto hotelInfoRequestDto);
+
+    List<HotelDto> getAllHotels();
 }

@@ -1,5 +1,6 @@
 package com.HiveStay.entity;
 
+import com.HiveStay.entity.enums.Gender;
 import com.HiveStay.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -28,20 +30,23 @@ public class User implements UserDetails {
     private String email;
 
     @Column(nullable = false)
-    private String password;    //bcrypt password
+    private String password;
 
     private String name;
 
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)    //not id's, actual String (Guest, HotelManager)
+    @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
-    //Look for roles (Admin, Manager, User)
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        //streaming through roles
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))   //only check if it have "ROLE_" as prfix
+                .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))
                 .collect(Collectors.toSet());
     }
 
@@ -52,6 +57,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (!(o instanceof User user)) return false;
         return Objects.equals(getId(), user.getId());
     }

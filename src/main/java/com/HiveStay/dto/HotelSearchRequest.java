@@ -1,6 +1,7 @@
 package com.HiveStay.dto;
 
 import lombok.Data;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
 
@@ -13,5 +14,4 @@ public class HotelSearchRequest {
 
     private Integer page=0;
     private Integer size=10;
-
 }

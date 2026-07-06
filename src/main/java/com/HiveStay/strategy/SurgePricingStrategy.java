@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 public class SurgePricingStrategy implements PricingStrategy{
+
     private final PricingStrategy wrapped;
 
     @Override

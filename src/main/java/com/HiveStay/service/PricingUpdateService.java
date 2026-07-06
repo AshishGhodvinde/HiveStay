@@ -7,14 +7,14 @@ import com.HiveStay.repository.HotelMinPriceRepository;
 import com.HiveStay.repository.HotelRepository;
 import com.HiveStay.repository.InventoryRepository;
 import com.HiveStay.strategy.PricingService;
-import jakarta.transaction.Transactional;
+import com.HiveStay.strategy.PricingStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,28 +29,32 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class PricingUpdateService {
+
+    // Scheduler to update the inventory and HotelMinPrice tables every hour
+
     private final HotelRepository hotelRepository;
     private final InventoryRepository inventoryRepository;
     private final HotelMinPriceRepository hotelMinPriceRepository;
     private final PricingService pricingService;
 
-    //Schedular to update the inventory and HotelMinPrice tables
+//    @Scheduled(cron = "*/5 * * * * *")
     @Scheduled(cron = "0 0 * * * *")
-    // Every Hour at Zero min Zero sec, run this method i.e. run every hour
-    public void updatePrices(){
+    public void updatePrices() {
         int page = 0;
         int batchSize = 100;
-        while(true){
+
+        while(true) {
             Page<Hotel> hotelPage = hotelRepository.findAll(PageRequest.of(page, batchSize));
-            if(hotelPage.isEmpty()){
+            if(hotelPage.isEmpty()) {
                 break;
             }
             hotelPage.getContent().forEach(this::updateHotelPrices);
+
             page++;
         }
     }
 
-    private void updateHotelPrices(Hotel hotel){
+    private void updateHotelPrices(Hotel hotel) {
         log.info("Updating hotel prices for hotel ID: {}", hotel.getId());
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = LocalDate.now().plusYears(1);
@@ -58,6 +62,7 @@ public class PricingUpdateService {
         List<Inventory> inventoryList = inventoryRepository.findByHotelAndDateBetween(hotel, startDate, endDate);
 
         updateInventoryPrices(inventoryList);
+
         updateHotelMinPrice(hotel, inventoryList, startDate, endDate);
     }
 
@@ -79,15 +84,17 @@ public class PricingUpdateService {
             hotelPrice.setPrice(price);
             hotelPrices.add(hotelPrice);
         });
+
         // Save all HotelPrice entities in bulk
         hotelMinPriceRepository.saveAll(hotelPrices);
     }
 
-    private void updateInventoryPrices(List<Inventory> inventoryList){
+    private void updateInventoryPrices(List<Inventory> inventoryList) {
         inventoryList.forEach(inventory -> {
             BigDecimal dynamicPrice = pricingService.calculateDynamicPricing(inventory);
             inventory.setPrice(dynamicPrice);
         });
         inventoryRepository.saveAll(inventoryList);
     }
+
 }

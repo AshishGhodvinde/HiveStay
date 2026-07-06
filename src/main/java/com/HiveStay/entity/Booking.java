@@ -28,7 +28,7 @@ public class Booking {
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name= "room_id", nullable = false)
     private Room room;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,14 +50,11 @@ public class Booking {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private BookingStatus bookingStatus;
 
-    @ManyToMany(fetch = FetchType.LAZY)     // 1 booking can have multiple guests
-    // A new table is created combining Booking and Guest
-    //JoinColumn here because -> Booking is owning the new Table
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "booking_guest",
             joinColumns = @JoinColumn(name = "booking_id"),
@@ -67,5 +64,8 @@ public class Booking {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
+
+    @Column(unique = true)
+    private String paymentSessionId;
 
 }

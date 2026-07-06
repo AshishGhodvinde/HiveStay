@@ -19,7 +19,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-//getting called in every Request, it intercepts request for header
 @Configuration
 @RequiredArgsConstructor
 public class JWTAuthFilter extends OncePerRequestFilter {
@@ -35,13 +34,12 @@ public class JWTAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            //getting the header
             final String requestTokenHeader = request.getHeader("Authorization");
             if (requestTokenHeader == null || !requestTokenHeader.startsWith("Bearer")) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            //splitting the header for token, as it looks like : "Bearer jsabduy187yhfuig37fge79fg8a6sf97"
+
             String token = requestTokenHeader.split("Bearer ")[1];
             Long userId = jwtService.getUserIdFromToken(token);
 
