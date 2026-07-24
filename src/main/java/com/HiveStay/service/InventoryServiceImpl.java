@@ -112,6 +112,7 @@ public class InventoryServiceImpl implements InventoryService{
         User user = getCurrentUser();
         if(!user.equals(room.getHotel().getOwner())) throw new AccessDeniedException("You are not the owner of room with id: "+roomId);
 
+        // locking
         inventoryRepository.getInventoryAndLockBeforeUpdate(roomId, updateInventoryRequestDto.getStartDate(),
                 updateInventoryRequestDto.getEndDate());
 
@@ -120,3 +121,4 @@ public class InventoryServiceImpl implements InventoryService{
                 updateInventoryRequestDto.getSurgeFactor());
     }
 }
+

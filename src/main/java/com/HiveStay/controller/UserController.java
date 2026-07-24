@@ -70,5 +70,4 @@ public class UserController {
         guestService.deleteGuest(guestId);
         return ResponseEntity.noContent().build();
     }
-
 }

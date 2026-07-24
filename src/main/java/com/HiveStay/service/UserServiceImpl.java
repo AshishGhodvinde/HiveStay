@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public UserDto getMyProfile() {
+    public UserDto getMyProfile() {     // Dto because we don't want to send password
         User user = getCurrentUser();
         log.info("Getting the profile for user with id: {}", user.getId());
         return modelMapper.map(user, UserDto.class);

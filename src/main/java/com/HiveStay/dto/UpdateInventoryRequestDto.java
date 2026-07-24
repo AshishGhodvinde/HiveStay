@@ -9,6 +9,6 @@ import java.time.LocalDate;
 public class UpdateInventoryRequestDto {
     private LocalDate startDate;
     private LocalDate endDate;
-    private BigDecimal surgeFactor;
+    private BigDecimal surgeFactor;     //can update price directly using surge factor
     private Boolean closed;
 }

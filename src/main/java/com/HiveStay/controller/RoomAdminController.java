@@ -50,5 +50,4 @@ public class RoomAdminController {
                                                   @RequestBody RoomDto roomDto) {
         return ResponseEntity.ok(roomService.updateRoomById(hotelId, roomId, roomDto));
     }
-
 }

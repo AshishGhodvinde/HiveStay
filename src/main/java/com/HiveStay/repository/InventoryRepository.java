@@ -119,6 +119,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByRoomOrderByDate(Room room);
 
+    // locking because if we are updating closed and someone is booking at same time
     @Query("""
                 SELECT i
                 FROM Inventory i
